@@ -6,6 +6,15 @@ public class CameraMotion : MonoBehaviour
     [SerializeField] Vector3 followOffset = new Vector3(0f, 2.5f, -6f);
     [SerializeField, Min(0.01f)] float followSharpness = 6f;
 
+    public void SnapToTarget()
+    {
+        if (movement == null) return;
+        Transform target = movement.transform;
+        Quaternion heading = Quaternion.Euler(0f, target.eulerAngles.y, 0f);
+        transform.position = target.position + heading * followOffset;
+        transform.LookAt(target.position + Vector3.up);
+    }
+
     void LateUpdate()
     {
         if (movement == null) return;

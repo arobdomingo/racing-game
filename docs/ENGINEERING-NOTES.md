@@ -124,3 +124,9 @@ alignment under all conditions, or a desktop release build.
 
 Next milestone: a closed circuit, ordered checkpoints and recovery to the last
 valid checkpoint, followed by the countdown/lap/results/restart race loop.
+
+## Milestone 2: circuit foundation
+
+See [Closed circuit, checkpoints and recovery](CIRCUIT-MILESTONE.md) for the
+architecture, mesh construction, directional crossing mathematics, recovery
+transaction, tradeoffs, acceptance tests and exercises.

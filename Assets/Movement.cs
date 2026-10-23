@@ -28,6 +28,7 @@ public class Movement : MonoBehaviour
     public AnimationCurve torqueCurve;
 
     Rigidbody vehicleBody;
+    float recoveryHoldUntil;
     float throttleTarget;
     float brakeTarget;
     float steeringTarget;
@@ -53,6 +54,7 @@ public class Movement : MonoBehaviour
 
     void Update()
     {
+        if (Time.time < recoveryHoldUntil) return;
         // Read button edges at render frequency so shifts aren't lost between physics ticks.
         throttleTarget = Input.GetKey(KeyCode.P) ? 1f : 0f;
         brakeTarget = Input.GetKey(KeyCode.O) ? 1f : 0f;
@@ -102,6 +104,30 @@ public class Movement : MonoBehaviour
             tires[i].GetWorldPose(out Vector3 position, out Quaternion rotation);
             visual.SetPositionAndRotation(position, rotation);
         }
+    }
+
+    public void ResetForRecovery(Vector3 position, Quaternion rotation)
+    {
+        if (vehicleBody == null) vehicleBody = GetComponent<Rigidbody>();
+        throttleTarget = brakeTarget = steeringTarget = 0f;
+        throttleInput = brakeInput = steeringInput = speed = 0f;
+        gear = 1;
+        EngineRPM = IdleRPM;
+        recoveryHoldUntil = Time.time + 0.5f;
+        foreach (WheelCollider tire in tires)
+        {
+            if (tire == null) continue;
+            tire.motorTorque = tire.brakeTorque = tire.steerAngle = 0f;
+            // Recreate wheel simulation state so pre-recovery wheelspin is not retained.
+            tire.enabled = false;
+            tire.enabled = true;
+        }
+        vehicleBody.linearVelocity = Vector3.zero;
+        vehicleBody.angularVelocity = Vector3.zero;
+        vehicleBody.position = position;
+        vehicleBody.rotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
+        vehicleBody.WakeUp();
     }
 
     void OnDisable()
