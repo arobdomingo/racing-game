@@ -18,9 +18,15 @@ public class VehicleUIControl : MonoBehaviour
     public TMP_Text gearText;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
-
+        if (movement == null || throttleFill == null || throttleTotal == null ||
+            brakeFill == null || brakeTotal == null || steerFill == null ||
+            steerTotal == null || speedText == null || gearText == null)
+        {
+            Debug.LogError("VehicleUIControl requires a vehicle and all HUD references.", this);
+            enabled = false;
+        }
     }
 
     // Update is called once per frame
@@ -75,7 +81,7 @@ public class VehicleUIControl : MonoBehaviour
 
         float steeringInput = movement.steeringInput;
         float maxAngle = movement.maxAngle;
-        float normalizedInput = steeringInput / maxAngle; //from -1 to 1
+        float normalizedInput = steeringInput / Mathf.Max(1f, maxAngle); //from -1 to 1
 
         float maxSlide = steerTotal.rect.width / 2;
 

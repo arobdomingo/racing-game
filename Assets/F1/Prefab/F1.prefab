@@ -919,7 +919,7 @@ MonoBehaviour:
   - {fileID: 6679272201619433122}
   - {fileID: 9200077291695826277}
   - {fileID: 5367378121772998760}
-  maxEngineTorque: 0
+  maxEngineTorque: 300
   brakeTorque: 5000
   steerSensitivity: 0.5
   maxAngle: 30

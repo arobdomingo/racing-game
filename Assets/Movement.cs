@@ -1,160 +1,109 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class Movement : MonoBehaviour
 {
-
+    // Serialized names are retained so the existing prefab and scene keep their references.
+    // Order: front right, front left, rear right, rear left.
     public WheelCollider[] tires = new WheelCollider[4];
-    public int maxEngineTorque;
-    public int brakeTorque;
+    [Min(0)] public int maxEngineTorque = 300;
+    [Min(0)] public int brakeTorque = 5000;
+    [Min(0)] public float steerSensitivity = 1f;
+    [Min(1)] public float maxAngle = 30f;
+    [SerializeField, Min(0.01f)] float pedalRate = 2f;
+    [SerializeField, Min(1)] float steeringRate = 90f;
 
-    public float steerSensitivity = 1f;
-    public float maxAngle = 30f;
+    public float throttleInput { get; private set; }
+    public float brakeInput { get; private set; }
+    public float steeringInput { get; private set; }
+    public float speed { get; private set; }
+    public int gear { get; private set; } = 1;
+    public float EngineRPM { get; private set; }
 
-    public float throttleInput = 0f;
-    public float brakeInput = 0f;
-    public float steeringInput = 0f;
-
-    //made public to access in Script class
-
-    public float speed;
-    public int gear = 1;
-    float[] gearRatios = { 3.1f, 2.5f, 2.0f, 1.75f, 1.45f, 1.3f, 1.1f, 0.9f };
-    float fdRatio = 4.9f;
-
-    float maxEngineRPM = 15000f;
+    readonly float[] gearRatios = { 3.1f, 2.5f, 2f, 1.75f, 1.45f, 1.3f, 1.1f, 0.9f };
+    const float FinalDriveRatio = 4.9f;
+    const float IdleRPM = 2000f;
+    const float MaxEngineRPM = 15000f;
     public AnimationCurve torqueCurve;
 
-    Rigidbody rigidbody;
+    Rigidbody vehicleBody;
+    float throttleTarget;
+    float brakeTarget;
+    float steeringTarget;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
-        rigidbody = GetComponent<Rigidbody>();
-
+        vehicleBody = GetComponent<Rigidbody>();
+        if (tires == null || tires.Length != 4 ||
+            System.Array.Exists(tires, tire => tire == null))
+        {
+            Debug.LogError("Movement requires four assigned WheelColliders (front pair, rear pair).", this);
+            enabled = false;
+            return;
+        }
+        if (torqueCurve == null || torqueCurve.length == 0)
+        {
+            Debug.LogError("Movement requires an engine torque curve.", this);
+            enabled = false;
+            return;
+        }
+        vehicleBody.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        gearChange();
-        Drive();
-        Steer();
-
+        // Read button edges at render frequency so shifts aren't lost between physics ticks.
+        throttleTarget = Input.GetKey(KeyCode.P) ? 1f : 0f;
+        brakeTarget = Input.GetKey(KeyCode.O) ? 1f : 0f;
+        steeringTarget = (Input.GetKey(KeyCode.D) ? 1f : 0f)
+            - (Input.GetKey(KeyCode.A) ? 1f : 0f);
+        int shift = (Input.GetKeyDown(KeyCode.Period) ? 1 : 0)
+            - (Input.GetKeyDown(KeyCode.Comma) ? 1 : 0);
+        gear = Mathf.Clamp(gear + shift, 1, gearRatios.Length);
     }
 
-    void Steer()
+    void FixedUpdate()
     {
-        float angleChange = computeAngleChange() * steerSensitivity;
+        float dt = Time.fixedDeltaTime;
+        throttleInput = Mathf.MoveTowards(throttleInput, throttleTarget, pedalRate * dt);
+        brakeInput = Mathf.MoveTowards(brakeInput, brakeTarget, pedalRate * dt);
+        steeringInput = Mathf.MoveTowards(steeringInput, steeringTarget * maxAngle,
+            steeringRate * steerSensitivity * dt);
 
-        steeringInput += angleChange;
-        steeringInput = Mathf.Clamp(steeringInput, -maxAngle, maxAngle);
+        float wheelRPM = Mathf.Abs((tires[2].rpm + tires[3].rpm) * 0.5f);
+        float ratio = gearRatios[gear - 1] * FinalDriveRatio;
+        // An idle floor approximates clutch slip at launch; this is not a clutch simulation.
+        float coupledRPM = wheelRPM * ratio;
+        EngineRPM = Mathf.Clamp(coupledRPM, IdleRPM, MaxEngineRPM);
+        float engineTorque = Mathf.Max(0f, torqueCurve.Evaluate(EngineRPM / MaxEngineRPM))
+            * maxEngineTorque;
+        float rearWheelTorque = coupledRPM >= MaxEngineRPM ? 0f
+            : throttleInput * engineTorque * ratio * 0.5f;
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 4; i++)
         {
-            tires[i].steerAngle = steeringInput;
+            tires[i].steerAngle = i < 2 ? steeringInput : 0f;
+            tires[i].motorTorque = i < 2 ? 0f : rearWheelTorque;
+            // brakeTorque is the total budget: 70% front, 30% rear, split per axle.
+            tires[i].brakeTorque = brakeInput * brakeTorque * (i < 2 ? 0.35f : 0.15f);
         }
-
+        speed = vehicleBody.linearVelocity.magnitude;
     }
 
-    float computeAngleChange()
+    void OnDisable()
     {
-
-        float angleChange = 0;
-
-        bool leftSteer = Input.GetKey(KeyCode.A);
-        bool rightSteer = Input.GetKey(KeyCode.D);
-        bool forward = Input.GetKey(KeyCode.W);
-
-        if (leftSteer) //to steer left
-        { angleChange += -1f; }
-
-        if (rightSteer) //to steer right
-        { angleChange += 1f; }
-
-        if (forward)
+        throttleTarget = brakeTarget = steeringTarget = 0f;
+        throttleInput = brakeInput = steeringInput = 0f;
+        if (tires == null) return;
+        foreach (WheelCollider tire in tires)
         {
-            if (leftSteer ^ rightSteer) { angleChange = angleChange / 2f; }
-
-            else
-            {
-                float currentAngle = tires[0].steerAngle;
-
-                if (currentAngle > 0f) { angleChange = -0.5f; }
-                else { angleChange = 0.5f; }
-
-            }
-
+            if (tire == null) continue;
+            tire.motorTorque = tire.brakeTorque = tire.steerAngle = 0f;
         }
-
-        return angleChange;
-
     }
 
-    float computeWheelTorque()
+    void OnApplicationFocus(bool focused)
     {
-        float wheelRPM = (tires[2].rpm + tires[3].rpm) / 2; //average rear wheel RPM
-
-        float engineRPM = wheelRPM * gearRatios[gear - 1] * fdRatio; //relationship between engine and wheel RPM
-        if (engineRPM > maxEngineRPM) engineRPM = maxEngineRPM;
-
-        float normalizedRPM = engineRPM / maxEngineRPM;
-
-        float engineTorque = torqueCurve.Evaluate(normalizedRPM) * maxEngineTorque; // normalizeTorque * maxWheelTorque
-
-        Debug.Log("Engine RPM:" + engineRPM);
-
-        return engineTorque * gearRatios[gear - 1] * fdRatio;  // ( = wheelTorque) relationship between engine and wheel torque
-
-    }
-
-    void Drive()
-    {
-
-        float wheelTorque = computeWheelTorque();
-
-        //acceleration
-        if (Input.GetKey(KeyCode.P)) { throttleInput += 0.01f; }
-        else { throttleInput -= 0.01f; }
-
-        throttleInput = Mathf.Clamp(throttleInput, 0f, 1f);
-
-        for (int i = 2; i < 4; i++)
-        {
-            tires[i].motorTorque = throttleInput * (wheelTorque / 2);
-        }
-
-        //braking
-        if (Input.GetKey(KeyCode.O)) { brakeInput += 0.01f; }
-        else { brakeInput -= 0.01f; }
-
-        brakeInput = Mathf.Clamp(brakeInput, 0f, 1f);
-
-        for (int i = 0; i < 2; i++) 
-        {
-            tires[i].brakeTorque = brakeInput * (brakeTorque * 0.7f); //front tyres
-        }
-
-        for (int i = 2; i < 4; i++)
-        {
-            tires[i].brakeTorque = brakeInput * (brakeTorque * 0.3f); //rear tyres
-        }
-
-        speed = rigidbody.linearVelocity.magnitude;
-    }
-
-    void gearChange()
-    {
-        if (Input.GetKeyDown(KeyCode.Period)) // > for gear up
-        {
-            gear += 1;
-        }
-
-        else if (Input.GetKeyDown(KeyCode.Comma)) // < for gear down
-        {
-            gear -= 1;
-        }
-
-        gear = Mathf.Clamp(gear, 1, 8);
-
+        if (!focused) throttleTarget = brakeTarget = steeringTarget = 0f;
     }
 }
