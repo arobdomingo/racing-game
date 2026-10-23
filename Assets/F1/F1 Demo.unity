@@ -131,22 +131,6 @@ PrefabInstance:
       propertyPath: m_LocalPosition.x
       value: -0.43454814
       objectReference: {fileID: 0}
-    - target: {fileID: 400000, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.13110895
-      objectReference: {fileID: 0}
-    - target: {fileID: 400000, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -5.2675675e-17
-      objectReference: {fileID: 0}
-    - target: {fileID: 400000, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.991368
-      objectReference: {fileID: 0}
-    - target: {fileID: 400000, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 6.87319e-17
-      objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.46677983
@@ -154,22 +138,6 @@ PrefabInstance:
     - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
       propertyPath: m_LocalPosition.z
       value: -1.1343104
-      objectReference: {fileID: 0}
-    - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.20529474
-      objectReference: {fileID: 0}
-    - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -4.7357427e-17
-      objectReference: {fileID: 0}
-    - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.9787002
-      objectReference: {fileID: 0}
-    - target: {fileID: 400002, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 7.249879e-17
       objectReference: {fileID: 0}
     - target: {fileID: 400016, guid: 62d38c3b81a175f4585f3bb99fca3071, type: 3}
       propertyPath: m_RootOrder

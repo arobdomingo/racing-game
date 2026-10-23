@@ -87,3 +87,29 @@ Exercises: derive the old pedal rise time at 144 FPS; calculate second-gear whee
 torque; compare stopping distance before/after the brake split fix; graph camera
 error at sharpness 3 versus 6; propose an input-provider interface and a race
 state diagram without allowing HUD code to mutate simulation state.
+
+## Milestone 1 follow-up: wheel presentation
+
+User Play Mode testing confirmed the car moves and steers, but the visible wheels
+stayed angled. The demo had fixed front-wheel rotation overrides (approximately
+15 and 24 degrees away from the prefab orientation). No script animated the meshes.
+Removed those overrides and moved each mesh filter/renderer onto a WheelVisual
+child, keeping the WheelCollider on its original stationary mounting transform.
+Movement now calls GetWorldPose in LateUpdate for all four paired visuals. This
+includes steering, rolling and suspension travel. Setting the collider transform
+instead would feed animation back into physics and progressively move the mount.
+
+The serialized array follows the existing collider order: front left, front right,
+rear left, rear right. The earlier audit's right/left labels were reversed; axle
+membership was correct, so drive and brake allocation were unaffected.
+
+Reference: https://docs.unity3d.com/ja/current/ScriptReference/WheelCollider.GetWorldPose.html
+
+Validation: static prefab ownership, unique IDs and visual/collider references
+checked. Compilation and visual acceptance remain pending. Stop Play Mode before
+reloading the modified prefab. On a fresh run, hold A then D while stationary:
+front meshes should visibly turn both ways and center on release; rear meshes
+should remain straight. Accelerate to check rolling and suspension alignment.
+Use Scene view close-up if the chase view is too small. If the imported mesh axes
+or pivots produce a flipped/off-center visual, inspect the visual transform before
+adding a model-specific alignment offset; do not rotate the physics mount to hide it.

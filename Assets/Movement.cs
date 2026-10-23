@@ -4,8 +4,9 @@ using UnityEngine;
 public class Movement : MonoBehaviour
 {
     // Serialized names are retained so the existing prefab and scene keep their references.
-    // Order: front right, front left, rear right, rear left.
+    // Order: front left, front right, rear left, rear right.
     public WheelCollider[] tires = new WheelCollider[4];
+    [SerializeField] Transform[] wheelVisuals = new Transform[4];
     [Min(0)] public int maxEngineTorque = 300;
     [Min(0)] public int brakeTorque = 5000;
     [Min(0)] public float steerSensitivity = 1f;
@@ -88,6 +89,19 @@ public class Movement : MonoBehaviour
             tires[i].brakeTorque = brakeInput * brakeTorque * (i < 2 ? 0.35f : 0.15f);
         }
         speed = vehicleBody.linearVelocity.magnitude;
+    }
+
+    void LateUpdate()
+    {
+        // Animate only visual children; moving a collider would change the simulation.
+        if (wheelVisuals == null) return;
+        for (int i = 0; i < Mathf.Min(tires.Length, wheelVisuals.Length); i++)
+        {
+            Transform visual = wheelVisuals[i];
+            if (visual == null || visual == tires[i].transform) continue;
+            tires[i].GetWorldPose(out Vector3 position, out Quaternion rotation);
+            visual.SetPositionAndRotation(position, rotation);
+        }
     }
 
     void OnDisable()

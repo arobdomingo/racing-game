@@ -16,8 +16,8 @@ flowchart LR
 ```
 
 Movement lives on the F1 prefab's Car child, with a 400 kg Rigidbody and a box
-collider. Its four assigned WheelColliders are ordered front right, front left,
-rear right, rear left. Rear wheels receive drive torque. The Player tag is on
+collider. Its four assigned WheelColliders are ordered front left, front right,
+rear left, rear right. Rear wheels receive drive torque. The Player tag is on
 another child (Contr), rather than the controller object. CameraMotion originally
 searched that tag while separately reading Movement. VehicleUIControl reads vehicle
 state and writes TMP speed/gear labels and three RectTransform indicators.
