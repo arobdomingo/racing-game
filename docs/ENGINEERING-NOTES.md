@@ -113,3 +113,14 @@ should remain straight. Accelerate to check rolling and suspension alignment.
 Use Scene view close-up if the chase view is too small. If the imported mesh axes
 or pivots produce a flipped/off-center visual, inspect the visual transform before
 adding a model-specific alignment offset; do not rotate the physics mount to hide it.
+
+## User Play Mode validation — 2026-10-23
+
+In Unity 6000.1.0f1, the user confirmed the F1 Demo car moves and steering works.
+After the wheel presentation fix (1713d20), the user confirmed the wheel visuals
+work as well. This validates those observed behaviors in the Editor; it does not
+establish acceptance of frame-rate comparisons, braking distance, suspension
+alignment under all conditions, or a desktop release build.
+
+Next milestone: a closed circuit, ordered checkpoints and recovery to the last
+valid checkpoint, followed by the countdown/lap/results/restart race loop.
